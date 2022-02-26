@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{ops::Not, str::FromStr};
 
 use bigdecimal::BigDecimal;
 
@@ -14,15 +14,20 @@ pub type ParseResult<T> = std::result::Result<T, ParseError>;
 #[derive(Debug, thiserror::Error)]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum ParseError {
-    #[error("{0} is not a valid transaction type descriptor")]
+    #[error("'{0}' is not a valid transaction type descriptor")]
     InvalidEntryType(String),
-    #[error("{0} could not be parsed as a decimal")]
+    #[error("'{0}' is not a valid month day")]
+    InvalidDay(String),
+    #[error("'{0}' could not be parsed as a decimal")]
     InvalidDecimal(String),
     #[error("Expected description after '{0}'")]
     NoDescription(String),
+    #[error("Malformed entry: '{0}'")]
+    Malformed(String),
 }
 
 pub struct Entry<'a> {
+    pub day: u8,
     pub typ: EntryType,
     pub decimal: BigDecimal,
     // TODO: rename to account?
@@ -32,13 +37,16 @@ pub struct Entry<'a> {
 
 impl<'a> Entry<'a> {
     pub fn from_str(input: &'a str) -> ParseResult<Self> {
-        let (typ, rest) = parse_entry_type(input)?;
+        let (day, rest) = parse_day(input)?;
+
+        let (typ, rest) = parse_entry_type(rest)?;
 
         let (decimal, rest) = parse_decimal(rest)?;
 
         let description = parse_description(rest);
 
         Ok(Self {
+            day,
             typ,
             decimal,
             description,
@@ -46,11 +54,25 @@ impl<'a> Entry<'a> {
     }
 }
 
+fn parse_day(input: &str) -> ParseResult<(u8, &str)> {
+    let (first, rest) = input
+        .trim()
+        .split_once(' ')
+        .ok_or_else(|| ParseError::Malformed(input.to_owned()))?;
+
+    // TODO: validate if this is a valid day?
+    let day = first
+        .parse()
+        .map_err(|_| ParseError::InvalidDay(first.to_owned()))?;
+
+    Ok((day, rest))
+}
+
 fn parse_entry_type(input: &str) -> ParseResult<(EntryType, &str)> {
     // Assumes input is trimmed
     debug_assert!(input == input.trim_start());
     // Assumes input is non-empty
-    debug_assert!(input.len() > 0);
+    debug_assert!(input.is_empty().not());
 
     let (first, rest) = input.split_at(1);
 
@@ -64,7 +86,7 @@ fn parse_entry_type(input: &str) -> ParseResult<(EntryType, &str)> {
 fn parse_decimal(input: &str) -> ParseResult<(BigDecimal, &str)> {
     let input = input.trim_start();
 
-    fn parse_decimal<'a>(input: &'a str) -> Option<(&'a str, &'a str)> {
+    fn parse_decimal(input: &str) -> Option<(&str, &str)> {
         let (decimal, rest) = input.split_once(' ')?;
         if rest.trim().is_empty() {
             None?
