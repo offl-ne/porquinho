@@ -33,26 +33,35 @@ pub enum ParseError {
 pub struct Entry<'a> {
     pub day: u8,
     pub typ: EntryType,
-    pub decimal: BigDecimal,
+    pub amount: BigDecimal,
     // TODO: rename to account?
     // TODO: make it optional?
     pub description: &'a str,
 }
 
 impl<'a> Entry<'a> {
+    pub fn new(day: u8, typ: EntryType, amount: BigDecimal, description: &'a str) -> Self {
+        Self {
+            day,
+            typ,
+            amount,
+            description,
+        }
+    }
+
     pub fn from_str(input: &'a str) -> ParseResult<Self> {
         let (day, rest) = parse_day(input)?;
 
         let (typ, rest) = parse_entry_type(rest)?;
 
-        let (decimal, rest) = parse_decimal(rest)?;
+        let (amount, rest) = parse_decimal(rest)?;
 
         let description = parse_description(rest);
 
         Ok(Self {
             day,
             typ,
-            decimal,
+            amount,
             description,
         })
     }
@@ -133,7 +142,7 @@ mod entry_parsing {
             Entry {
                 day: 22,
                 typ: EntryType::Credit,
-                decimal: five,
+                amount: five,
                 description: "Salary"
             }
         );
@@ -143,7 +152,7 @@ mod entry_parsing {
             Entry {
                 day: 12,
                 typ: EntryType::Debit,
-                decimal: six,
+                amount: six,
                 description: "Rent"
             }
         );

@@ -31,8 +31,8 @@ impl Reader {
             let line = str::from_utf8(line)?;
             let entry = Entry::from_str(line)?;
             match entry.typ {
-                EntryType::Debit => outgoing += entry.decimal,
-                EntryType::Credit => incoming += entry.decimal,
+                EntryType::Debit => outgoing += entry.amount,
+                EntryType::Credit => incoming += entry.amount,
             }
         }
 

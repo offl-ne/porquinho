@@ -1,6 +1,7 @@
 use std::{io::Write, path::Path, str};
 
 use chrono::{Datelike, Local};
+use fs_err as fs;
 
 /// Represents the filename of a Porquinho bookkeeping file
 pub struct BookkeepingFile {
@@ -26,8 +27,19 @@ impl BookkeepingFile {
 
     pub fn as_path(&self) -> &Path {
         // Safety: `current_file` must never make `self.name` be invalid UTF-8
-        let filename = str::from_utf8(&self.name).unwrap();
+        let filename = unsafe { str::from_utf8_unchecked(&self.name) };
 
         Path::new(filename)
+    }
+}
+
+pub fn create_file_if_not_existent(path: &Path) {
+    if fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .is_ok()
+    {
+        println!("Created {}", path.display());
     }
 }

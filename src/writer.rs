@@ -11,10 +11,7 @@ pub struct Writer;
 
 impl Writer {
     pub fn write_entry(path: &Path, entry: Entry) -> Result<()> {
-        let mut file = fs::OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(path)?;
+        let mut file = fs::OpenOptions::new().append(true).open(path)?;
 
         let typ = match entry.typ {
             EntryType::Debit => "-",
@@ -26,7 +23,7 @@ impl Writer {
             "{d} {t} {a} {D}",
             d = entry.day,
             t = typ,
-            a = entry.decimal,
+            a = entry.amount,
             D = entry.description
         )?;
 

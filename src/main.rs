@@ -6,19 +6,19 @@ mod parser;
 mod reader;
 mod writer;
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use bigdecimal::BigDecimal;
 use chrono::{Datelike, Local};
 use clap::Parser;
 use dirs::Dirs;
-pub use error::{Error, Result};
+use error::{Error, Result};
 use parser::{Entry, EntryType};
 use reader::Reader;
 
 use crate::{
     cli::{Opts, Subcommand},
-    file::BookkeepingFile,
+    file::{create_file_if_not_existent, BookkeepingFile},
     writer::Writer,
 };
 
@@ -40,6 +40,8 @@ fn main() {
 struct GlobalState {
     opts: Opts,
     dirs: Dirs,
+    // Bookkeeping path
+    bk_path: PathBuf,
 }
 
 impl GlobalState {
@@ -47,48 +49,49 @@ impl GlobalState {
         let opts = Opts::parse();
         let dirs = Dirs::init()?;
 
-        Ok(Self { opts, dirs })
+        let bk_path = dirs.data().join(BookkeepingFile::current_file().as_path());
+        create_file_if_not_existent(&bk_path);
+
+        Ok(Self {
+            opts,
+            dirs,
+            bk_path,
+        })
     }
 
     pub fn run_command(self) -> Result<()> {
-        let bk_path = self.bookkeeping_file_path();
         let day = Local::today().day() as u8;
+        let Self {
+            ref bk_path,
+            opts: Opts { cmd },
+            ..
+        } = self;
 
-        let (typ, decimal, description) = match self.opts.cmd {
+        match cmd {
             Subcommand::Take {
                 amount,
-                description,
-            } => (EntryType::Debit, amount, description),
+                ref description,
+            } => {
+                let entry = Entry::new(day, EntryType::Debit, amount, description);
+                Writer::write_entry(bk_path, entry)?;
+            }
             Subcommand::Put {
                 amount,
-                description,
-            } => (EntryType::Credit, amount, description),
-            Subcommand::Status {} => {
-                let total = Reader::new().total_from_file(&bk_path)?;
+                ref description,
+            } => {
+                let entry = Entry::new(day, EntryType::Credit, amount, description);
+                Writer::write_entry(bk_path, entry)?;
+            }
+            Subcommand::Status => {
+                let total = Reader::new().total_from_file(bk_path)?;
+                // Safeyu: Always has file name because it's in format "MM-YYYY"
                 println!("Status for {:?}", bk_path.file_name().unwrap());
                 println!("\tIncoming: R$ {}", total.incoming);
                 println!("\tOutgoing: R$ {}", total.outgoing);
-
-                return Ok(())
-            },
+            }
         };
-
-        let entry = Entry {
-            day,
-            typ,
-            decimal,
-            description: &description,
-        };
-
-        Writer::write_entry(&bk_path, entry)?;
 
         Ok(())
-    }
-
-    fn bookkeeping_file_path(&self) -> PathBuf {
-        self.dirs
-            .data()
-            .join(BookkeepingFile::current_file().as_path())
     }
 }
 
