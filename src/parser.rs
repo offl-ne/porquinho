@@ -2,6 +2,8 @@ use std::{ops::Not, str::FromStr};
 
 use bigdecimal::BigDecimal;
 
+#[derive(Debug)]
+#[cfg_attr(test, derive(PartialEq))]
 pub enum EntryType {
     /// Entry is an expenditure
     Debit,
@@ -26,6 +28,8 @@ pub enum ParseError {
     Malformed(String),
 }
 
+#[derive(Debug)]
+#[cfg_attr(test, derive(PartialEq))]
 pub struct Entry<'a> {
     pub day: u8,
     pub typ: EntryType,
@@ -115,7 +119,35 @@ mod entry_parsing {
 
     use bigdecimal::BigDecimal;
 
-    use crate::parser::{parse_decimal, parse_description, ParseError};
+    use crate::parser::{parse_decimal, parse_description, EntryType, ParseError};
+
+    use super::Entry;
+
+    #[test]
+    fn parses_entries_correctly() {
+        let five = BigDecimal::from_str("5.00").unwrap();
+        let six = BigDecimal::from_str("6.00").unwrap();
+
+        assert_eq!(
+            Entry::from_str("22 + 5.00 Salary").unwrap(),
+            Entry {
+                day: 22,
+                typ: EntryType::Credit,
+                decimal: five,
+                description: "Salary"
+            }
+        );
+
+        assert_eq!(
+            Entry::from_str("12 - 6.000 Rent\n").unwrap(),
+            Entry {
+                day: 12,
+                typ: EntryType::Debit,
+                decimal: six,
+                description: "Rent"
+            }
+        );
+    }
 
     #[test]
     fn parses_valid_decimals_correctly() {
