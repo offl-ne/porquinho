@@ -63,7 +63,14 @@ impl GlobalState {
                 amount,
                 description,
             } => (EntryType::Credit, amount, description),
-            Subcommand::Status {} => todo!(),
+            Subcommand::Status {} => {
+                let total = Reader::new().total_from_file(&bk_path)?;
+                println!("Status for {:?}", bk_path.file_name().unwrap());
+                println!("\tIncoming: R$ {}", total.incoming);
+                println!("\tOutgoing: R$ {}", total.outgoing);
+
+                return Ok(())
+            },
         };
 
         let entry = Entry {
