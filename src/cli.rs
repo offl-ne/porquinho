@@ -1,5 +1,5 @@
 use bigdecimal::BigDecimal;
-use clap::{Parser, ValueHint};
+use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[clap(about, version)]
