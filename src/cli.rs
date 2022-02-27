@@ -30,5 +30,5 @@ pub enum Subcommand {
         description: String,
     },
     /// Current status for your
-    Status {},
+    Status,
 }
