@@ -4,6 +4,7 @@ mod error;
 mod file;
 mod parser;
 mod reader;
+mod utils;
 mod writer;
 
 use std::path::PathBuf;
@@ -14,7 +15,6 @@ use clap::Parser;
 use dirs::Dirs;
 use error::{Error, Result};
 use parser::{Entry, EntryType};
-use reader::Reader;
 
 use crate::{
     cli::{Opts, Subcommand},
@@ -23,7 +23,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Total {
+pub struct Status {
     /// Amount spended
     pub outgoing: BigDecimal,
     /// Amount received
@@ -67,18 +67,18 @@ impl GlobalState {
                 amount,
                 ref description,
             } => {
-                let entry = Entry::new(day, EntryType::Debit, amount, description);
+                let entry = Entry::new(day, EntryType::Withdraw, amount, description);
                 Writer::write_entry(bk_path, entry)?;
             }
             Subcommand::Put {
                 amount,
                 ref description,
             } => {
-                let entry = Entry::new(day, EntryType::Credit, amount, description);
+                let entry = Entry::new(day, EntryType::Deposit, amount, description);
                 Writer::write_entry(bk_path, entry)?;
             }
             Subcommand::Status => {
-                let total = Reader::new().total_from_file(bk_path)?;
+                let total = reader::status_from_file(bk_path)?;
                 // Safeyu: Always has file name because it's in format "MM-YYYY"
                 println!("Status for {:?}", bk_path.file_name().unwrap());
                 println!("\tIncoming: R$ {}", total.incoming);

@@ -5,10 +5,8 @@ use bigdecimal::BigDecimal;
 #[derive(Debug)]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum EntryType {
-    /// Entry is an expenditure
-    Debit,
-    /// Entry
-    Credit,
+    Withdraw,
+    Deposit,
 }
 
 pub type ParseResult<T> = std::result::Result<T, ParseError>;
@@ -90,8 +88,8 @@ fn parse_entry_type(input: &str) -> ParseResult<(EntryType, &str)> {
     let (first, rest) = input.split_at(1);
 
     match first {
-        "+" => Ok((EntryType::Credit, rest)),
-        "-" => Ok((EntryType::Debit, rest)),
+        "+" => Ok((EntryType::Deposit, rest)),
+        "-" => Ok((EntryType::Withdraw, rest)),
         _ => Err(ParseError::InvalidEntryType(first.to_owned())),
     }
 }
@@ -141,7 +139,7 @@ mod entry_parsing {
             Entry::from_str("22 + 5.00 Salary").unwrap(),
             Entry {
                 day: 22,
-                kind: EntryType::Credit,
+                kind: EntryType::Deposit,
                 amount: five,
                 description: "Salary"
             }
@@ -151,7 +149,7 @@ mod entry_parsing {
             Entry::from_str("12 - 6.000 Rent\n").unwrap(),
             Entry {
                 day: 12,
-                kind: EntryType::Debit,
+                kind: EntryType::Withdraw,
                 amount: six,
                 description: "Rent"
             }
