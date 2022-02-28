@@ -13,7 +13,7 @@ impl Writer {
     pub fn write_entry(path: &Path, entry: Entry) -> Result<()> {
         let mut file = fs::OpenOptions::new().append(true).open(path)?;
 
-        let typ = match entry.typ {
+        let kind = match entry.kind {
             EntryType::Debit => "-",
             EntryType::Credit => "+",
         };
@@ -22,7 +22,7 @@ impl Writer {
             file,
             "{d} {t} {a} {D}",
             d = entry.day,
-            t = typ,
+            t = kind,
             a = entry.amount,
             D = entry.description
         )?;

@@ -32,7 +32,7 @@ pub enum ParseError {
 #[cfg_attr(test, derive(PartialEq))]
 pub struct Entry<'a> {
     pub day: u8,
-    pub typ: EntryType,
+    pub kind: EntryType,
     pub amount: BigDecimal,
     // TODO: rename to account?
     // TODO: make it optional?
@@ -40,10 +40,10 @@ pub struct Entry<'a> {
 }
 
 impl<'a> Entry<'a> {
-    pub fn new(day: u8, typ: EntryType, amount: BigDecimal, description: &'a str) -> Self {
+    pub fn new(day: u8, kind: EntryType, amount: BigDecimal, description: &'a str) -> Self {
         Self {
             day,
-            typ,
+            kind,
             amount,
             description,
         }
@@ -52,7 +52,7 @@ impl<'a> Entry<'a> {
     pub fn from_str(input: &'a str) -> ParseResult<Self> {
         let (day, rest) = parse_day(input)?;
 
-        let (typ, rest) = parse_entry_type(rest)?;
+        let (kind, rest) = parse_entry_type(rest)?;
 
         let (amount, rest) = parse_decimal(rest)?;
 
@@ -60,7 +60,7 @@ impl<'a> Entry<'a> {
 
         Ok(Self {
             day,
-            typ,
+            kind,
             amount,
             description,
         })
@@ -141,7 +141,7 @@ mod entry_parsing {
             Entry::from_str("22 + 5.00 Salary").unwrap(),
             Entry {
                 day: 22,
-                typ: EntryType::Credit,
+                kind: EntryType::Credit,
                 amount: five,
                 description: "Salary"
             }
@@ -151,7 +151,7 @@ mod entry_parsing {
             Entry::from_str("12 - 6.000 Rent\n").unwrap(),
             Entry {
                 day: 12,
-                typ: EntryType::Debit,
+                kind: EntryType::Debit,
                 amount: six,
                 description: "Rent"
             }

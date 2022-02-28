@@ -30,7 +30,7 @@ impl Reader {
         while let Ok(Some(line)) = self.buf.read_frame(&mut file, deframe_line) {
             let line = str::from_utf8(line)?;
             let entry = Entry::from_str(line)?;
-            match entry.typ {
+            match entry.kind {
                 EntryType::Debit => outgoing += entry.amount,
                 EntryType::Credit => incoming += entry.amount,
             }
