@@ -1,9 +1,10 @@
+mod status;
+
 use std::{
     io::{Read, Seek, Write},
     path::PathBuf,
 };
 
-use bigdecimal::{BigDecimal, Zero};
 use fs_err as fs;
 use toml::value::{Table as TomlTable, Value as TomlValue};
 
@@ -12,31 +13,14 @@ use crate::{
     parser::{Entry, EntryType},
 };
 
-#[derive(Debug)]
-pub struct BookkeeperStatus {
-    /// Total amount spended
-    pub outgoing_total: BigDecimal,
-    /// Total amount received
-    pub incoming_total: BigDecimal,
-    // /// Each spend transaction
-    // pub outgoing: Vec<BigDecimal>,
-    // /// Each receive transaction
-    // pub incoming: Vec<BigDecimal>,
-}
-
-impl BookkeeperStatus {
-    pub fn display(&self) {
-        println!("\tIncoming: R$ {}", self.incoming_total);
-        println!("\tOutgoing: R$ {}", self.outgoing_total);
-    }
-}
+use status::BookkeeperStatus;
 
 pub struct Bookkeeper {
     pub file: fs::File,
     pub file_path: PathBuf,
     pub file_contents: String,
     pub table: TomlTable,
-    pub status: BookkeeperStatus,
+    status: BookkeeperStatus,
 }
 
 impl Bookkeeper {
@@ -47,9 +31,6 @@ impl Bookkeeper {
         self.status.display();
     }
 
-    // Returns opened file and it's contents
-    //
-    // Seeked to the start, writes will overwrite from the start
     pub fn load_from_path(path: impl Into<PathBuf>) -> Result<Self> {
         let path = path.into();
         let mut file = fs::OpenOptions::new().read(true).write(true).open(&path)?;
@@ -107,11 +88,6 @@ impl Bookkeeper {
         Ok(())
     }
 
-    /// Loads toml table from text and type check, or generate default
-    ///
-    /// # Errors:
-    ///
-    /// Returns `Error::InvalidTomlTypes` if loaded toml has incorrect types.
     fn load_toml_table_or_default(input_text: &str) -> TomlTable {
         let toml = if input_text.trim().is_empty() {
             generate_default_toml()
@@ -122,27 +98,8 @@ impl Bookkeeper {
         unwrap_toml_table(toml)
     }
 
-    /// Read a bookkeeping file and return the total amount spent and received.
-    pub fn status_from_toml_table(table: &TomlTable) -> Result<BookkeeperStatus> {
-        let mut outgoing_total = BigDecimal::zero();
-        let mut incoming_total = BigDecimal::zero();
-
-        let (take, put) = (
-            table["take"].as_array().unwrap(),
-            table["put"].as_array().unwrap(),
-        );
-
-        for entry in take.iter().chain(put) {
-            let entry = entry.as_str().unwrap();
-            let entry = Entry::from_str(entry).unwrap();
-
-            match entry.kind {
-                EntryType::Withdraw => outgoing_total += entry.amount,
-                EntryType::Deposit => incoming_total += entry.amount,
-            }
-        }
-
-        Ok(BookkeeperStatus { outgoing_total, incoming_total })
+    fn status_from_toml_table(table: &TomlTable) -> Result<BookkeeperStatus> {
+        BookkeeperStatus::from_toml_table(table)
     }
 }
 
@@ -175,18 +132,10 @@ fn type_check_toml_fields(table: &TomlTable) -> TomlTypeCheckDiagnosis {
 }
 
 pub fn generate_default_toml() -> TomlValue {
-    // // Qual dos códigos é melhor? com ou sem a macro?
-    let toml = toml::toml! {
+    toml::toml! {
         take = []
         put = []
-    };
-
-    // // Qual dos códigos é melhor? com ou sem a macro?
-    // let mut map = TomlTable::new();
-    // map.insert("take".to_string(), TomlValue::Array(vec![]));
-    // map.insert("put".to_string(), TomlValue::Array(vec![]));
-
-    toml
+    }
 }
 
 #[cfg(test)]
@@ -229,7 +178,6 @@ mod tests {
     }
 }
 
-// Truncates file to have only the written content
 fn truncate_and_close_file(file: &mut fs::File) -> Result<()> {
     let written_len = file.stream_position()?;
     file.set_len(written_len).map_err(Into::into)
