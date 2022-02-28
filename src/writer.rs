@@ -1,5 +1,5 @@
 use std::{
-    io::{Read, Seek, Write},
+    io::{Seek, Write},
     path::Path,
 };
 
@@ -7,17 +7,16 @@ use fs_err as fs;
 use toml::value::Value as TomlValue;
 
 use crate::{
+    bookkeeper,
     parser::{Entry, EntryType},
-    utils, Result,
+    Result,
 };
 
 pub struct Writer;
 
 impl Writer {
     pub fn write_entry(path: &Path, entry: Entry) -> Result<()> {
-        let (mut file, file_contents) = open_file(path)?;
-
-        let mut table = utils::load_toml_table_or_default(&file_contents);
+        let (mut file, _, mut table) = bookkeeper::open_file_and_moar(path)?;
 
         let (array_key, kind_symbol) = match entry.kind {
             EntryType::Withdraw => ("take", '-'),
@@ -41,18 +40,6 @@ impl Writer {
 
         Ok(())
     }
-}
-
-// Returns opened file and it's contents
-//
-// Seeked to the start, writes will overwrite from the start
-fn open_file(path: &Path) -> Result<(fs::File, String)> {
-    let mut file = fs::OpenOptions::new().read(true).write(true).open(path)?;
-    let mut content = String::new();
-    file.read_to_string(&mut content)?;
-    file.rewind()?;
-
-    Ok((file, content))
 }
 
 // Truncates file to have only the written content

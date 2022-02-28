@@ -1,26 +1,19 @@
-use std::{io::Read, path::Path};
+use std::path::Path;
 
 use bigdecimal::{BigDecimal, Zero};
-use fs_err as fs;
 
 use crate::{
+    bookkeeper,
     parser::{Entry, EntryType},
-    utils, Result, Status,
+    Result, Status,
 };
 
 /// Read a bookkeeping file and return the total amount spent and received.
 pub fn status_from_file(path: &Path) -> Result<Status> {
-    let mut file = fs::File::open(path)?;
-
     let mut outgoing = BigDecimal::zero();
     let mut incoming = BigDecimal::zero();
 
-    let mut content = String::new();
-    file.read_to_string(&mut content).unwrap();
-
-    let table = utils::load_toml_table_or_default(&content);
-
-    utils::type_check_toml_fields(&table);
+    let (_, _, table) = bookkeeper::open_file_and_moar(path)?;
 
     let (take, put) = (
         table["take"].as_array().unwrap(),
