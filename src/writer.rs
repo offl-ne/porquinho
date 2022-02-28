@@ -7,16 +7,15 @@ use fs_err as fs;
 use toml::value::Value as TomlValue;
 
 use crate::{
-    bookkeeper,
     parser::{Entry, EntryType},
-    Result,
+    Bookkeeper, Result,
 };
 
 pub struct Writer;
 
 impl Writer {
     pub fn write_entry(path: &Path, entry: Entry) -> Result<()> {
-        let (mut file, _, mut table) = bookkeeper::open_file_and_moar(path)?;
+        let Bookkeeper { mut file, mut table, .. } = Bookkeeper::load_from_path(path)?;
 
         let (array_key, kind_symbol) = match entry.kind {
             EntryType::Withdraw => ("take", '-'),

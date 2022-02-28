@@ -13,12 +13,17 @@ use bigdecimal::BigDecimal;
 use chrono::{Datelike, Local};
 use clap::Parser;
 use dirs::Dirs;
-use error::{Error, Result};
 use parser::{Entry, EntryType};
+
+pub use crate::{
+    bookkeeper::Bookkeeper,
+    error::{Error, Result},
+};
 
 use crate::{
     cli::{Opts, Subcommand},
-    file::{create_file_if_not_existent, BookkeepingFile},
+    file::create_file_if_not_existent,
+    file::BookkeepingFile,
     writer::Writer,
 };
 

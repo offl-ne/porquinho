@@ -3,7 +3,7 @@ use std::path::Path;
 use bigdecimal::{BigDecimal, Zero};
 
 use crate::{
-    bookkeeper,
+    bookkeeper::Bookkeeper,
     parser::{Entry, EntryType},
     Result, Status,
 };
@@ -13,7 +13,7 @@ pub fn status_from_file(path: &Path) -> Result<Status> {
     let mut outgoing = BigDecimal::zero();
     let mut incoming = BigDecimal::zero();
 
-    let (_, _, table) = bookkeeper::open_file_and_moar(path)?;
+    let Bookkeeper { table, .. } = Bookkeeper::load_from_path(path)?;
 
     let (take, put) = (
         table["take"].as_array().unwrap(),
