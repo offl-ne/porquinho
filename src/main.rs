@@ -39,7 +39,6 @@ fn main() {
 
 struct GlobalState {
     opts: Opts,
-    dirs: Dirs,
     // Bookkeeping path
     bk_path: PathBuf,
 }
@@ -52,11 +51,7 @@ impl GlobalState {
         let bk_path = dirs.data().join(BookkeepingFile::current_file().as_path());
         create_file_if_not_existent(&bk_path);
 
-        Ok(Self {
-            opts,
-            dirs,
-            bk_path,
-        })
+        Ok(Self { opts, bk_path })
     }
 
     pub fn run_command(self) -> Result<()> {
