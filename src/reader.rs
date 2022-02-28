@@ -1,6 +1,4 @@
-/////
-use std::io::Read;
-use std::path::Path;
+use std::{io::Read, path::Path};
 
 use bigdecimal::{BigDecimal, Zero};
 use fs_err as fs;

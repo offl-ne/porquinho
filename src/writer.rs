@@ -3,13 +3,13 @@ use std::{
     path::Path,
 };
 
+use fs_err as fs;
+use toml::value::Value as TomlValue;
+
 use crate::{
     parser::{Entry, EntryType},
     utils, Result,
 };
-
-use fs_err as fs;
-use toml::value::Value as TomlValue;
 
 pub struct Writer;
 

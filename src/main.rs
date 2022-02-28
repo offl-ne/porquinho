@@ -63,17 +63,11 @@ impl GlobalState {
         } = self;
 
         match cmd {
-            Subcommand::Take {
-                amount,
-                ref description,
-            } => {
+            Subcommand::Take { amount, ref description } => {
                 let entry = Entry::new(day, EntryType::Withdraw, amount, description);
                 Writer::write_entry(bk_path, entry)?;
             }
-            Subcommand::Put {
-                amount,
-                ref description,
-            } => {
+            Subcommand::Put { amount, ref description } => {
                 let entry = Entry::new(day, EntryType::Deposit, amount, description);
                 Writer::write_entry(bk_path, entry)?;
             }

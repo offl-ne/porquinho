@@ -39,12 +39,7 @@ pub struct Entry<'a> {
 
 impl<'a> Entry<'a> {
     pub fn new(day: u8, kind: EntryType, amount: BigDecimal, description: &'a str) -> Self {
-        Self {
-            day,
-            kind,
-            amount,
-            description,
-        }
+        Self { day, kind, amount, description }
     }
 
     pub fn from_str(input: &'a str) -> ParseResult<Self> {
@@ -56,12 +51,7 @@ impl<'a> Entry<'a> {
 
         let description = parse_description(rest);
 
-        Ok(Self {
-            day,
-            kind,
-            amount,
-            description,
-        })
+        Ok(Self { day, kind, amount, description })
     }
 }
 
@@ -126,9 +116,8 @@ mod entry_parsing {
 
     use bigdecimal::BigDecimal;
 
-    use crate::parser::{parse_decimal, parse_description, EntryType, ParseError};
-
     use super::Entry;
+    use crate::parser::{parse_decimal, parse_description, EntryType, ParseError};
 
     #[test]
     fn parses_entries_correctly() {
