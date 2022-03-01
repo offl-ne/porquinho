@@ -13,7 +13,7 @@ pub struct Opts {
 
 #[derive(Parser, PartialEq, Eq, Debug)]
 pub enum Subcommand {
-    /// Record a debit transaction from your account
+    /// Record a new withdraw from your account
     Take {
         #[clap(required = true)]
         amount: BigDecimal,
@@ -21,7 +21,7 @@ pub enum Subcommand {
         #[clap(required = true)]
         description: String,
     },
-    /// Record a new credit to your account
+    /// Record a new deposit to your account
     Put {
         #[clap(required = true)]
         amount: BigDecimal,

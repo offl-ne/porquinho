@@ -5,10 +5,8 @@ use bigdecimal::BigDecimal;
 #[derive(Debug)]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum EntryType {
-    /// Entry is an expenditure
-    Debit,
-    /// Entry
-    Credit,
+    Withdraw,
+    Deposit,
 }
 
 pub type ParseResult<T> = std::result::Result<T, ParseError>;
@@ -32,7 +30,7 @@ pub enum ParseError {
 #[cfg_attr(test, derive(PartialEq))]
 pub struct Entry<'a> {
     pub day: u8,
-    pub typ: EntryType,
+    pub kind: EntryType,
     pub amount: BigDecimal,
     // TODO: rename to account?
     // TODO: make it optional?
@@ -40,30 +38,20 @@ pub struct Entry<'a> {
 }
 
 impl<'a> Entry<'a> {
-    pub fn new(day: u8, typ: EntryType, amount: BigDecimal, description: &'a str) -> Self {
-        Self {
-            day,
-            typ,
-            amount,
-            description,
-        }
+    pub fn new(day: u8, kind: EntryType, amount: BigDecimal, description: &'a str) -> Self {
+        Self { day, kind, amount, description }
     }
 
     pub fn from_str(input: &'a str) -> ParseResult<Self> {
         let (day, rest) = parse_day(input)?;
 
-        let (typ, rest) = parse_entry_type(rest)?;
+        let (kind, rest) = parse_entry_type(rest)?;
 
         let (amount, rest) = parse_decimal(rest)?;
 
         let description = parse_description(rest);
 
-        Ok(Self {
-            day,
-            typ,
-            amount,
-            description,
-        })
+        Ok(Self { day, kind, amount, description })
     }
 }
 
@@ -90,8 +78,8 @@ fn parse_entry_type(input: &str) -> ParseResult<(EntryType, &str)> {
     let (first, rest) = input.split_at(1);
 
     match first {
-        "+" => Ok((EntryType::Credit, rest)),
-        "-" => Ok((EntryType::Debit, rest)),
+        "+" => Ok((EntryType::Deposit, rest)),
+        "-" => Ok((EntryType::Withdraw, rest)),
         _ => Err(ParseError::InvalidEntryType(first.to_owned())),
     }
 }
@@ -128,9 +116,8 @@ mod entry_parsing {
 
     use bigdecimal::BigDecimal;
 
-    use crate::parser::{parse_decimal, parse_description, EntryType, ParseError};
-
     use super::Entry;
+    use crate::parser::{parse_decimal, parse_description, EntryType, ParseError};
 
     #[test]
     fn parses_entries_correctly() {
@@ -141,7 +128,7 @@ mod entry_parsing {
             Entry::from_str("22 + 5.00 Salary").unwrap(),
             Entry {
                 day: 22,
-                typ: EntryType::Credit,
+                kind: EntryType::Deposit,
                 amount: five,
                 description: "Salary"
             }
@@ -151,7 +138,7 @@ mod entry_parsing {
             Entry::from_str("12 - 6.000 Rent\n").unwrap(),
             Entry {
                 day: 12,
-                typ: EntryType::Debit,
+                kind: EntryType::Withdraw,
                 amount: six,
                 description: "Rent"
             }

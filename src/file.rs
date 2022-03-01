@@ -33,6 +33,7 @@ impl BookkeepingFile {
     }
 }
 
+// TODO: We could check the error to ensure its ok, instead of the "ok" error
 pub fn create_file_if_not_existent(path: &Path) {
     if fs::OpenOptions::new()
         .write(true)
