@@ -18,8 +18,11 @@ pub(super) struct BookkeeperStatus {
 
 impl BookkeeperStatus {
     pub(super) fn display(&self) {
+        let balance = &self.incoming_total - &self.outgoing_total;
+
         println!("\tIncoming: R$ {}", self.incoming_total);
         println!("\tOutgoing: R$ {}", self.outgoing_total);
+        println!("\tBalance:  R$ {}", balance);
     }
 
     pub(super) fn from_toml_table(table: &TomlTable) -> Result<Self> {
