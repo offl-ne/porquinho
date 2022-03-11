@@ -1,12 +1,34 @@
+use std::cmp::Ordering;
 use std::{ops::Not, str::FromStr};
 
 use bigdecimal::BigDecimal;
 
-#[derive(Debug)]
-#[cfg_attr(test, derive(PartialEq))]
-pub enum EntryType {
+#[derive(Debug, Clone, PartialOrd, PartialEq, Eq)]
+pub enum OperationType {
     Withdraw,
     Deposit,
+}
+
+impl OperationType {
+    pub fn name_and_symbol(&self) -> (&'static str, char) {
+        match self {
+            Self::Withdraw => ("take", '-'),
+            Self::Deposit => ("put", '+'),
+        }
+    }
+}
+
+/// Put operations come before take operations
+impl Ord for OperationType {
+    fn cmp(&self, other: &Self) -> Ordering {
+        use OperationType::*;
+
+        match (self, other) {
+            (Deposit, Withdraw) => Ordering::Less,
+            (Deposit, Deposit) | (Withdraw, Withdraw) => Ordering::Equal,
+            (Withdraw, Deposit) => Ordering::Greater,
+        }
+    }
 }
 
 pub type ParseResult<T> = std::result::Result<T, ParseError>;
@@ -15,41 +37,51 @@ pub type ParseResult<T> = std::result::Result<T, ParseError>;
 #[cfg_attr(test, derive(PartialEq))]
 pub enum ParseError {
     #[error("'{0}' is not a valid transaction type descriptor")]
-    InvalidEntryType(String),
+    InvalidOperationType(String),
     #[error("'{0}' is not a valid month day")]
     InvalidDay(String),
     #[error("'{0}' could not be parsed as a decimal")]
     InvalidDecimal(String),
     #[error("Expected description after '{0}'")]
     NoDescription(String),
-    #[error("Malformed entry: '{0}'")]
+    #[error("Malformed operation: '{0}'")]
     Malformed(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(test, derive(PartialEq))]
-pub struct Entry<'a> {
+pub struct Operation {
     pub day: u8,
-    pub kind: EntryType,
+    pub kind: OperationType,
     pub amount: BigDecimal,
     // TODO: rename to account?
     // TODO: make it optional?
-    pub description: &'a str,
+    pub description: String,
 }
 
-impl<'a> Entry<'a> {
-    pub fn new(day: u8, kind: EntryType, amount: BigDecimal, description: &'a str) -> Self {
-        Self { day, kind, amount, description }
+impl Operation {
+    pub fn new(
+        day: u8,
+        kind: OperationType,
+        amount: BigDecimal,
+        description: impl ToString,
+    ) -> Self {
+        Self {
+            day,
+            kind,
+            amount,
+            description: description.to_string(),
+        }
     }
 
-    pub fn from_str(input: &'a str) -> ParseResult<Self> {
+    pub fn from_str(input: &str) -> ParseResult<Self> {
         let (day, rest) = parse_day(input)?;
 
-        let (kind, rest) = parse_entry_type(rest)?;
+        let (kind, rest) = parse_operation_type(rest)?;
 
         let (amount, rest) = parse_decimal(rest)?;
 
-        let description = parse_description(rest);
+        let description = parse_description(rest).into();
 
         Ok(Self { day, kind, amount, description })
     }
@@ -69,7 +101,7 @@ fn parse_day(input: &str) -> ParseResult<(u8, &str)> {
     Ok((day, rest))
 }
 
-fn parse_entry_type(input: &str) -> ParseResult<(EntryType, &str)> {
+fn parse_operation_type(input: &str) -> ParseResult<(OperationType, &str)> {
     // Assumes input is trimmed
     debug_assert!(input == input.trim_start());
     // Assumes input is non-empty
@@ -78,9 +110,9 @@ fn parse_entry_type(input: &str) -> ParseResult<(EntryType, &str)> {
     let (first, rest) = input.split_at(1);
 
     match first {
-        "+" => Ok((EntryType::Deposit, rest)),
-        "-" => Ok((EntryType::Withdraw, rest)),
-        _ => Err(ParseError::InvalidEntryType(first.to_owned())),
+        "+" => Ok((OperationType::Deposit, rest)),
+        "-" => Ok((OperationType::Withdraw, rest)),
+        _ => Err(ParseError::InvalidOperationType(first.to_owned())),
     }
 }
 
@@ -111,36 +143,36 @@ fn parse_description(input: &str) -> &str {
 }
 
 #[cfg(test)]
-mod entry_parsing {
+mod operation_parsing {
     use std::str::FromStr;
 
     use bigdecimal::BigDecimal;
 
-    use super::Entry;
-    use crate::parser::{parse_decimal, parse_description, EntryType, ParseError};
+    use super::Operation;
+    use crate::parser::{parse_decimal, parse_description, OperationType, ParseError};
 
     #[test]
-    fn parses_entries_correctly() {
+    fn parses_operations_correctly() {
         let five = BigDecimal::from_str("5.00").unwrap();
         let six = BigDecimal::from_str("6.00").unwrap();
 
         assert_eq!(
-            Entry::from_str("22 + 5.00 Salary").unwrap(),
-            Entry {
+            Operation::from_str("22 + 5.00 Salary").unwrap(),
+            Operation {
                 day: 22,
-                kind: EntryType::Deposit,
+                kind: OperationType::Deposit,
                 amount: five,
-                description: "Salary"
+                description: "Salary".into()
             }
         );
 
         assert_eq!(
-            Entry::from_str("12 - 6.000 Rent\n").unwrap(),
-            Entry {
+            Operation::from_str("12 - 6.000 Rent\n").unwrap(),
+            Operation {
                 day: 12,
-                kind: EntryType::Withdraw,
+                kind: OperationType::Withdraw,
                 amount: six,
-                description: "Rent"
+                description: "Rent".into()
             }
         );
     }

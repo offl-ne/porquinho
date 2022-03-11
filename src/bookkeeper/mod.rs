@@ -10,7 +10,7 @@ use toml::value::{Table as TomlTable, Value as TomlValue};
 
 use crate::{
     error::{Error, Result, TomlTypeCheck, TomlTypeCheckDiagnosis},
-    parser::{Entry, EntryType},
+    parser::Operation,
 };
 
 use status::BookkeeperStatus;
@@ -59,18 +59,15 @@ impl Bookkeeper {
         })
     }
 
-    pub fn add_entry(&mut self, entry: Entry) -> Result<()> {
-        let (array_key, kind_symbol) = match entry.kind {
-            EntryType::Withdraw => ("take", '-'),
-            EntryType::Deposit => ("put", '+'),
-        };
+    pub fn add_operation(&mut self, operation: Operation) -> Result<()> {
+        let (array_key, kind_symbol) = operation.kind.name_and_symbol();
 
         let line = format!(
             "{d} {k} {a} {D}",
-            d = entry.day,
+            d = operation.day,
             k = kind_symbol,
-            a = entry.amount,
-            D = entry.description
+            a = operation.amount,
+            D = operation.description
         );
 
         self.table[array_key]
@@ -167,14 +164,8 @@ mod tests {
         let bookkeeper = Bookkeeper::load_from_path(dummy.path()).unwrap();
         let status = bookkeeper.status;
 
-        assert_eq!(
-            status.incoming_total,
-            BigDecimal::from_str("500.75").unwrap()
-        );
-        assert_eq!(
-            status.outgoing_total,
-            BigDecimal::from_str("420.52").unwrap()
-        );
+        assert_eq!(status.put_total, BigDecimal::from_str("500.75").unwrap());
+        assert_eq!(status.take_total, BigDecimal::from_str("420.52").unwrap());
     }
 }
 
