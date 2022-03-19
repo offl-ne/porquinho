@@ -1,8 +1,7 @@
 use nu_table::{draw_table, StyledString, Table, TextStyle, Theme};
 use std::collections::HashMap;
 
-fn f((x, theme): (&str, Theme)) {
-    println!("{x}");
+fn f((theme_name, theme): (&str, Theme)) {
     let args: Vec<_> = std::env::args().collect();
     let mut width = 0;
 
@@ -16,6 +15,8 @@ fn f((x, theme): (&str, Theme)) {
         width = 80;
     }
 
+    println!("{:?}", theme_name);
+
     // The mocked up table data
     let (table_headers, row_data) = make_table_data();
     // The table headers
@@ -27,9 +28,63 @@ fn f((x, theme): (&str, Theme)) {
     // FIXME: Config isn't available from here so just put these here to compile
     let color_hm: HashMap<String, nu_ansi_term::Style> = HashMap::new();
     // Capture the table as a string
-    let output_table = draw_table(&table, width, &color_hm, true);
+    let output_table = draw_table(&table, width, &color_hm, false);
     // Draw the table
     println!("{}", output_table)
+}
+
+fn make_table_data() -> (Vec<&'static str>, Vec<&'static str>) {
+    let table_headers = vec![
+        "category",
+        "description",
+        "emoji",
+        "ios_version",
+        "unicode_version",
+        "aliases",
+        "tags",
+        "category2",
+        "description2",
+        "emoji2",
+        "ios_version2",
+        "unicode_version2",
+        "aliases2",
+        "tags2",
+    ];
+
+    let row_data = vec![
+        "Smileys & Emotion",
+        "grinning face",
+        "😀",
+        "6",
+        "6.1",
+        "grinning",
+        "smile",
+        "Smileys & Emotion",
+        "grinning face",
+        "😀",
+        "6",
+        "6.1",
+        "grinning",
+        "smile",
+    ];
+
+    (table_headers, row_data)
+}
+
+fn vec_of_str_to_vec_of_styledstr(data: &[&str], is_header: bool) -> Vec<StyledString> {
+    let mut v = vec![];
+
+    for x in data {
+        if is_header {
+            v.push(StyledString::new(
+                String::from(*x),
+                TextStyle::default_header(),
+            ))
+        } else {
+            v.push(StyledString::new(String::from(*x), TextStyle::basic_left()))
+        }
+    }
+    v
 }
 
 fn main() {
@@ -49,60 +104,4 @@ fn main() {
     for x in vec {
         f(x);
     }
-}
-
-fn vec_of_str_to_vec_of_styledstr(data: &[impl ToString], is_header: bool) -> Vec<StyledString> {
-    let f = if is_header {
-        TextStyle::default_header()
-    } else {
-        TextStyle::basic_left()
-    };
-
-    data.iter()
-        .map(|x| StyledString::new(x.to_string(), f))
-        .collect()
-}
-
-fn make_table_data() -> (Vec<StyledString>, Vec<StyledString>) {
-    let table_headers = vec![
-        "category",
-        "description",
-        "emoji",
-        "ios_version",
-        "unicode_version",
-        "aliases",
-        "tags",
-        "category2",
-        "description2",
-        "emoji2",
-        "ios_version2",
-        "unicode_version2",
-        "aliases2",
-        "tags2",
-    ]
-    .into_iter()
-    .map(|x| StyledString::new(String::from(x), Default::default()))
-    .collect();
-
-    let row_data = vec![
-        "Smileys & Emotion",
-        "grinning face",
-        "😀",
-        "6",
-        "6.1",
-        "grinning",
-        "smile",
-        "Smileys & Emotion",
-        "grinning face",
-        "😀",
-        "6",
-        "6.1",
-        "grinning",
-        "smile",
-    ]
-    .into_iter()
-    .map(|x| StyledString::new(String::from(x), Default::default()))
-    .collect();
-
-    (table_headers, row_data)
 }

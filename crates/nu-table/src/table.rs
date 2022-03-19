@@ -23,8 +23,11 @@ pub struct StyledString {
 }
 
 impl StyledString {
-    pub fn new(contents: String, style: TextStyle) -> StyledString {
-        StyledString { contents, style }
+    pub fn new(contents: impl ToString, style: TextStyle) -> StyledString {
+        StyledString {
+            contents: contents.to_string(),
+            style,
+        }
     }
 
     pub fn set_style(&mut self, style: TextStyle) {
