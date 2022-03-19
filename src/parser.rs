@@ -3,7 +3,7 @@ use std::{ops::Not, str::FromStr};
 
 use bigdecimal::BigDecimal;
 
-#[derive(Debug, Clone, PartialOrd, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OperationType {
     Withdraw,
     Deposit,
@@ -15,6 +15,12 @@ impl OperationType {
             Self::Withdraw => ("take", '-'),
             Self::Deposit => ("put", '+'),
         }
+    }
+}
+
+impl PartialOrd for OperationType {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
