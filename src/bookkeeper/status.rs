@@ -22,16 +22,16 @@ pub(super) struct BookkeeperStatus {
     pub take_operations: Vec<Operation>,
 }
 
-fn line_from_operation(operation: &Operation) -> Vec<StyledString> {
+fn table_row_from_operation(operation: &Operation) -> Vec<StyledString> {
     let Operation { day, kind, amount, description } = operation;
 
-    let (_, kind_symbol) = kind.name_and_symbol();
+    let (kind_name, _) = kind.name_and_symbol();
 
     let line: Vec<StyledString> = [
         format!("{day:2}"),
-        format!("{kind_symbol}"),
+        kind_name.into(),
         format!("{amount:8.2}"),
-        description.clone(),
+        description.into(),
     ]
     .into_iter()
     .map(|x| StyledString::new(x, TextStyle::basic_left()))
@@ -40,52 +40,73 @@ fn line_from_operation(operation: &Operation) -> Vec<StyledString> {
     line
 }
 
-fn make_table_data(operations: &[Operation]) -> (Vec<StyledString>, Vec<Vec<StyledString>>) {
-    let table_headers = ["day", "op", "amount", "description"]
+fn table_header_from_column_names(column_names: &[&str]) -> Vec<StyledString> {
+    column_names
         .iter()
-        .take(4)
-        .map(|column_name| StyledString::new(column_name, TextStyle::default_header()))
-        .collect::<Vec<StyledString>>();
-
-    let row_data = operations
-        .into_iter()
-        .map(|x| line_from_operation(x))
-        .collect();
-
-    (table_headers, row_data)
+        .map(|x| StyledString::new(x, TextStyle::default_header()))
+        .collect()
 }
 
 impl BookkeeperStatus {
-    pub(super) fn display(&self) {
+    fn display_table(&self, table: &Table) {
+        let screen_width = 150;
+
+        // Do not change any colors, yet.
+        let colors = HashMap::new();
+
+        // Draw the table into an string
+        let output = draw_table(table, screen_width, &colors, false);
+        println!("{}", output);
+    }
+
+    fn display_value_table(&self) {
         let balance = &self.put_total - &self.take_total;
 
-        println!("\tIncoming: R$ {:.2}", self.put_total);
-        println!("\tOutgoing: R$ {:.2}", self.take_total);
-        println!("\tBalance:  R$ {:.2}", balance);
-        println!();
-        println!("\tOperations:");
+        let table = {
+            let header = ["Incoming", "Outgoing", "Balance"];
+            let header = table_header_from_column_names(&header);
 
+            let rows = vec![
+                format!("R$ {:.2}", self.put_total),
+                format!("R$ {:.2}", self.take_total),
+                format!("R$ {:.2}", balance),
+            ]
+            .into_iter()
+            .map(|x| StyledString::new(x, TextStyle::basic_left()))
+            .collect();
+
+            let theme = Theme::compact();
+
+            Table::new(header, vec![rows], theme)
+        };
+
+        self.display_table(&table);
+    }
+
+    fn display_operations_table(&self) {
         let mut all_operations = self.all_operations.clone();
         all_operations.sort_by(|a, b| a.day.cmp(&b.day).then(a.kind.cmp(&b.kind)));
 
-        for operation in &all_operations {
-            let (_, kind_symbol) = operation.kind.name_and_symbol();
-            let Operation { description, amount, day, .. } = &operation;
+        let table = {
+            let header = ["day", "op", "amount", "description"];
+            let header = table_header_from_column_names(&header);
 
-            println!("\t\t{day:2} {kind_symbol} {amount:8.2} {description}");
-        }
+            let rows: Vec<Vec<StyledString>> = all_operations
+                .iter()
+                .map(table_row_from_operation)
+                .collect();
 
-        let width = 150;
-        // The mocked up table data
-        let (headers, rows) = make_table_data(&all_operations);
-        // The table itself
-        let table = Table::new(headers, rows, Theme::light());
-        // FIXME: Config isn't available from here so just put these here to compile
-        let color_hm: HashMap<String, nu_ansi_term::Style> = HashMap::new();
-        // Capture the table as a string
-        let output_table = draw_table(&table, width, &color_hm, false);
-        // Draw the table
-        println!("{}", output_table);
+            let theme = Theme::compact();
+
+            Table::new(header, rows, theme)
+        };
+
+        self.display_table(&table);
+    }
+
+    pub(super) fn display(&self) {
+        self.display_value_table();
+        self.display_operations_table();
     }
 
     pub(super) fn from_toml_table(table: &TomlTable) -> Result<Self> {
