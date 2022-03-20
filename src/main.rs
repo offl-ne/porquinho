@@ -8,7 +8,7 @@ mod parser;
 use chrono::{Datelike, Local};
 use clap::Parser;
 use dirs::Dirs;
-use parser::{Entry, EntryType};
+use parser::{Operation, OperationType};
 
 pub use crate::{
     bookkeeper::Bookkeeper,
@@ -55,12 +55,12 @@ impl GlobalState {
 
         match cmd {
             Subcommand::Take { amount, ref description } => {
-                let entry = Entry::new(day, EntryType::Withdraw, amount, description);
-                bookkeeper.add_entry(entry)?;
+                let operation = Operation::new(day, OperationType::Withdraw, amount, description);
+                bookkeeper.add_operation(operation)?;
             }
             Subcommand::Put { amount, ref description } => {
-                let entry = Entry::new(day, EntryType::Deposit, amount, description);
-                bookkeeper.add_entry(entry)?;
+                let operation = Operation::new(day, OperationType::Deposit, amount, description);
+                bookkeeper.add_operation(operation)?;
             }
             Subcommand::Status => {
                 bookkeeper.display_status();

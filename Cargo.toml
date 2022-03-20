@@ -1,3 +1,9 @@
+[workspace]
+members = [
+    ".",
+    "crates/nu-table",
+]
+
 [package]
 name = "porquinho"
 version = "0.1.0"
@@ -14,6 +20,9 @@ bigdecimal = "0.3.0"
 directories = "4.0.1"
 fixed-buffer = "0.3.1"
 toml = "0.5.8"
+nu-table = { path = "crates/nu-table" }
+nu-ansi-term = "0.42.0"
+
 
 [dev-dependencies]
 tempfile = "3.3.0"

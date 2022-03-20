@@ -1,11 +1,11 @@
 use bigdecimal::BigDecimal;
 use clap::Parser;
 
-#[derive(Parser, Debug)]
-#[clap(about, version)]
 /// Simplistic personal finances helper
 ///
 /// Repository: https://github.com/vrmiguel/porquinho
+#[derive(Parser, Debug)]
+#[clap(about, version)]
 pub struct Opts {
     #[clap(subcommand)]
     pub cmd: Subcommand,
@@ -29,6 +29,6 @@ pub enum Subcommand {
         #[clap(required = true)]
         description: String,
     },
-    /// Current status for your
+    /// Current status for your account
     Status,
 }
