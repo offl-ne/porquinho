@@ -32,3 +32,7 @@ Check the status of your balance:
 ```sh
 porquinho status
 ```
+
+## Related Projects
+
+Check out [PolynomialToolbox](https://github.com/vrmiguel/PolynomialToolbox), a Python library with polynomial-related mathematical functions!
